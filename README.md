@@ -6,7 +6,18 @@
 
 A minimal Streamlit app that demonstrates an AI Agent Orchestrator between **patients**, **healthcare professionals**, and **insurance companies** to improve **structured medical reporting**, **transparency**, and **human‑in‑the‑loop** review.
 
-## Quick Start (Local, also in github you can use codespaces)
+
+### Quick Start (cloud)
+
+You can run this app directly on [Streamlit Community Cloud](https://streamlit.io/cloud):
+
+1. **Fork or clone** this repository into your own GitHub account.  
+2. Go to [Streamlit Community Cloud](https://streamlit.io/cloud) and click **New app**.  
+3. Select your repository, choose the **main** branch, and set `app.py` as the entry file.  
+4. Deploy — Streamlit will build the environment automatically and give you a publ
+
+ic URL.
+## Quick Start (Local)
 **Requirements:** Python 3.10+ (3.11 recommended), pip, and Graphviz (for the Architecture view).
 
 ```bash
