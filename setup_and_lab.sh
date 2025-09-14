@@ -1,34 +1,34 @@
 #!/bin/bash
 set -e
 
-cd /mnt/d/sandbox_workshop || { echo "No existe /mnt/d/sandbox_workshop"; exit 1; }
+cd /mnt/d/sandbox_workshop || { echo "Directory /mnt/d/sandbox_workshop does not exist"; exit 1; }
 
-# Si no hay venv, intenta crear uno (con venv del sistema)
+# If there is no venv, try to create one (using system venv)
 if [ ! -d ".venv" ]; then
   if ! dpkg -s python3-venv >/dev/null 2>&1; then
-    echo "[i] Instalando python3-venv (requiere sudo)..."
+    echo "[i] Installing python3-venv (requires sudo)..."
     sudo apt update
     sudo apt install -y python3-venv
   fi
-  echo "[i] Creando entorno .venv..."
+  echo "[i] Creating .venv environment..."
   python3 -m venv .venv
 fi
 
-# Activar venv
+# Activate venv
 source .venv/bin/activate
 
-# pip y deps
+# pip and dependencies
 python -m pip install --upgrade pip wheel
-if [ -f requirements_min.txt ]; then
-  pip install -r requirements_min.txt
+if [ -f requirements.txt ]; then
+  pip install -r requirements.txt
 fi
 
-# Asegurar jupyterlab e ipykernel
+# Ensure jupyterlab and ipykernel
 python -c "import jupyterlab" 2>/dev/null || pip install jupyterlab
 python -c "import ipykernel" 2>/dev/null || pip install ipykernel
 
-# Registrar kernel apuntando a ESTE venv
+# Register kernel pointing to THIS venv
 python -m ipykernel install --user --name sandbox_workshop --display-name "Python (sandbox_workshop)"
 
-echo "[i] Kernel registrado. Abriendo Jupyter Lab..."
+echo "[i] Kernel registered. Launching Jupyter Lab..."
 exec jupyter lab
