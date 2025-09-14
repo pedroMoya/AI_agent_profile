@@ -155,7 +155,7 @@ tab1, tab2 = st.tabs(["Architecture", "Problem & Solution"])
 with tab1:
     st.subheader("Architecture")
     arch = make_architecture_diagram()
-    st.graphviz_chart(arch, use_container_width=True)
+    st.graphviz_chart(arch, width='stretch')
     st.caption("Numbers on arrows correspond to the main flow steps.")
     st.download_button("Download architecture .dot", data=arch.source, file_name="architecture.dot", mime="text/plain")
     with st.expander("Show DOT source"):
@@ -164,14 +164,9 @@ with tab1:
 with tab2:
     st.subheader("Problem & Solution")
     ps = make_problem_solution_diagram()
-    st.graphviz_chart(ps, use_container_width=True)
+    st.graphviz_chart(ps, width='stretch')
     st.download_button("Download problem-solution .dot", data=ps.source, file_name="problem_solution.dot", mime="text/plain")
     with st.expander("Show DOT source"):
         st.code(ps.source, language="dot")
 
 st.markdown("---")
-st.caption(
-    "Tip: If the graph does not render, ensure the Graphviz system package is installed on your machine. "
-    "On macOS: `brew install graphviz`. On Ubuntu/Debian: `sudo apt-get install graphviz`. "
-    "On Windows (Admin PowerShell): `winget install graphviz` or `choco install graphviz`."
-)
