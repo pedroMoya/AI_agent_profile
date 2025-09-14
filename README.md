@@ -6,8 +6,7 @@
 
 A minimal Streamlit app that demonstrates an AI Agent Orchestrator between **patients**, **healthcare professionals**, and **insurance companies** to improve **structured medical reporting**, **transparency**, and **human‑in‑the‑loop** review.
 
-## Quick Start (Local)
-
+## Quick Start (Local, also in github you can use codespaces)
 **Requirements:** Python 3.10+ (3.11 recommended), pip, and Graphviz (for the Architecture view).
 
 ```bash
