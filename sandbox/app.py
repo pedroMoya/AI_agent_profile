@@ -1,63 +1,68 @@
 import streamlit as st
 
-st.set_page_config(page_title="Orquestador de Reportes de Salud", layout="wide")
+st.set_page_config(page_title="Health Report Orchestrator", layout="wide")
+
+# --- Helper: convert multiline text into bullets without using backslashes in f-strings ---
+def bullets_from_multiline(text: str, indent="  - "):
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    return "\n".join(f"{indent}{ln}" for ln in lines) if lines else f"{indent}(pending)"
 
 # --- Sidebar ---
-st.sidebar.title("Navegación")
-page = st.sidebar.radio("Ir a", ["Problema", "Arquitectura", "Flujo (1–9)", "Playground"])
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Problem", "Architecture", "Flow (1–9)", "Playground"])
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Actores")
-st.sidebar.checkbox("Paciente", value=True, help="Solicitante de beneficios / requerimientos")
-st.sidebar.checkbox("Profesional de la salud", value=True, help="Emite informes")
-st.sidebar.checkbox("Aseguradora de salud", value=True, help="Recibe y valida informes")
+st.sidebar.subheader("Actors")
+st.sidebar.checkbox("Patient", value=True, help="Requests benefits / requirements")
+st.sidebar.checkbox("Healthcare professional", value=True, help="Issues reports")
+st.sidebar.checkbox("Health insurance company", value=True, help="Receives and validates reports")
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Gobernanza")
-st.sidebar.checkbox("HIPAA / GDPR (frontera de cumplimiento)", value=True)
-st.sidebar.checkbox("Human-in-the-loop (paso 9)", value=True)
+st.sidebar.subheader("Governance")
+st.sidebar.checkbox("HIPAA / GDPR boundary", value=True)
+st.sidebar.checkbox("Human-in-the-loop (step 9)", value=True)
 
 # --- Problem view ---
-if page == "Problema":
+if page == "Problem":
     st.title("Reports to activate health insurance benefits")
 
     st.markdown(
         """
-        **Problema central:** los **informes médicos** que activan **beneficios de seguro de salud**
-        llegan **incompletos**, **tarde** o son **rechazados**, afectando al paciente y a la aseguradora.
+        **Core problem:** the **medical reports** needed to activate **health insurance benefits**
+        arrive **incomplete**, **late**, or get **rejected**, impacting both patient and insurer.
         """
     )
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.subheader("Profesional de la salud")
+        st.subheader("Healthcare professional")
         st.markdown(
-            "- Entrega **informes de salud**\n"
-            "  - Pueden quedar **sin finalizar**\n"
-            "  - Pueden enviarse **con retraso**"
+            "- Submits **health reports**\n"
+            "  - They can remain **unfinished**\n"
+            "  - They can be **delayed**"
         )
     with c2:
-        st.subheader("Paciente")
+        st.subheader("Patient")
         st.markdown(
-            "- **No recibe** beneficios a tiempo\n"
-            "- Riesgo de **rechazo** por requisitos"
+            "- **Does not receive** benefits on time\n"
+            "- Risk of **rejection** due to requirements"
         )
     with c3:
-        st.subheader("Aseguradora de salud")
+        st.subheader("Health insurance company")
         st.markdown(
-            "- **No orquesta** un sistema mejor\n"
-            "- Necesita **estandarización** y **trazabilidad**"
+            "- **Does not orchestrate** a better system\n"
+            "- Needs **standardization** and **traceability**"
         )
 
     st.info(
-        "Objetivo: orquestar con un **agente** (LLM + memoria/conocimiento/herramientas) un flujo "
-        "que asegure informes completos, en plazo y conformes a normativa."
+        "Goal: use an **agent** (LLM + memory/knowledge/tools) to orchestrate a flow that ensures "
+        "complete, on‑time, policy‑compliant reports."
     )
 
 # --- Architecture view ---
-elif page == "Arquitectura":
-    st.title("Arquitectura propuesta (tipo pizarra → app)")
-    st.caption("Frontera de cumplimiento: HIPAA / GDPR. El agente opera supervisado (human-in-the-loop).")
+elif page == "Architecture":
+    st.title("Proposed architecture (whiteboard → app)")
+    st.caption("Compliance boundary: HIPAA / GDPR. The agent operates with supervision (human-in-the-loop).")
 
     dot = r"""
     digraph G {
@@ -69,18 +74,18 @@ elif page == "Arquitectura":
       edge [fontsize=10, fontname="Helvetica"];
 
       subgraph cluster_comp {
-        label="Cumplimiento: HIPAA / GDPR";
+        label="Compliance: HIPAA / GDPR";
         color=red;
 
         agent_profile [label="Agent Profile"];
-        agent [label="Agent\n(Orchestrator · Planning · 'Autónomo'*)"];
+        agent [label="Agent\n(Orchestrator · Planning · 'Autonomous'*)"];
         llm [label="LLM"];
         system [label="System message"];
         memory [label="Memory"];
         knowledge [label="Knowledge"];
         tools [label="Tools"];
 
-        # Relaciones internas
+        # Internal relations
         agent_profile -> agent [label="(2)"];
         agent -> memory   [label="(4)"];
         agent -> knowledge[label="(4)"];
@@ -90,110 +95,116 @@ elif page == "Arquitectura":
         system-> agent    [label="(7)"];
       }
 
-      # Actores externos
-      medical [label="Acto médico\n(trigger)"];
-      patient [label="Paciente\nRequerimiento (request)"];
-      insurer [label="Aseguradora de salud"];
+      # External actors
+      medical [label="Medical Act\n(trigger)"];
+      patient [label="Patient\nRequest"];
+      insurer [label="Health Insurance Company"];
 
-      # Entradas a la frontera
+      # Inputs into boundary
       medical -> agent_profile [label="(1)"];
       patient -> agent_profile [label="(2)"];
       insurer -> agent_profile [label="(3)"];
 
-      # Salidas / retroalimentación
-      agent -> insurer [label="(8) Informe/estado"];
-      insurer -> system [label="(8) Reglas/plantillas"];
+      # Outputs / feedback
+      agent -> insurer [label="(8) Report/Status"];
+      insurer -> system [label="(8) Rules/Templates"];
 
-      # Supervisión humana
+      # Human supervision
       patient -> agent [style=dashed, label="(9) Human-in-the-loop"];
     }
     """
     st.graphviz_chart(dot, use_container_width=True)
 
-    st.caption("(*) 'Autónomo' dentro de guardas de seguridad y con revisión humana.")
+    st.caption("(*) 'Autonomous' within guardrails and with human review.")
 
 # --- Steps / Flow view ---
-elif page == "Flujo (1–9)":
-    st.title("Flujo numerado (1–9)")
+elif page == "Flow (1–9)":
+    st.title("Numbered flow (1–9)")
     st.markdown(
         """
-        1. **Acto médico (trigger):** ocurre un evento clínico que requiere informe.\n
-        2. **Requerimiento del paciente:** se solicita activar beneficios; el perfil del agente recoge contexto del caso.\n
-        3. **Aseguradora → Perfil del agente:** entrega reglas, plantillas y criterios de validación.\n
-        4. **Agente usa Memory/Knowledge/Tools:** recupera antecedentes, políticas y herramientas (por ej., generador de plantillas, validadores).\n
-        5. **Agente → LLM:** redacta/planifica borradores y checklists.\n
-        6. **LLM → Agente:** devuelve texto/plan; el agente decide próximos pasos.\n
-        7. **System message:** define políticas, tono y límites del LLM en tiempo de orquestación.\n
-        8. **Intercambio con aseguradora:** se envían informes/estados y se reciben reglas/observaciones.\n
-        9. **Human-in-the-loop:** el profesional verifica/edita antes de enviar; el paciente puede seguir el estado.
+        1. **Medical Act (trigger):** a clinical event requires a report.\n
+        2. **Patient request:** benefits are requested; the Agent Profile captures case context.\n
+        3. **Insurer → Agent Profile:** sends rules, templates, and validation criteria.\n
+        4. **Agent uses Memory/Knowledge/Tools:** retrieves policies and utilities (e.g., templates, validators).\n
+        5. **Agent → LLM:** drafts/plans checklists and report content.\n
+        6. **LLM → Agent:** returns text/plan; the agent decides next steps.\n
+        7. **System message:** sets policies, tone, and limits during orchestration.\n
+        8. **Exchange with insurer:** submit reports/status; receive rules/observations.\n
+        9. **Human-in-the-loop:** clinician verifies/edits before sending; patient can follow status.
         """
     )
 
 # --- Playground ---
 else:
-    st.title("Playground: prototipo de checklist y borrador")
-    st.markdown("**Objetivo:** pre‑armar un checklist de requisitos y un esqueleto de informe para enviar a la aseguradora.")
+    st.title("Playground: checklist & draft prototype")
+    st.markdown("**Goal:** prepare a requirements checklist and a report skeleton to send to the insurer.")
 
     with st.form("form_playground"):
         colA, colB = st.columns(2)
         with colA:
-            aseguradora = st.text_input("Aseguradora", placeholder="p. ej., SaludPlus")
-            acto = st.text_input("Acto médico (trigger)", placeholder="p. ej., cirugía ambulatoria / licencia médica")
-            diag = st.text_input("Diagnóstico / motivo principal", placeholder="p. ej., lumbociática aguda")
+            insurer = st.text_input("Insurance company", placeholder="e.g., SaludPlus")
+            trigger = st.text_input("Medical Act (trigger)", placeholder="e.g., outpatient surgery / sick leave")
+            diagnosis = st.text_input("Primary diagnosis / reason", placeholder="e.g., acute lumbosciatica")
         with colB:
-            fecha = st.date_input("Fecha del acto/reporte")
-            profesional = st.text_input("Profesional responsable", placeholder="p. ej., Dr./Dra. ____")
-            folio = st.text_input("Folio / N° de caso (opcional)")
+            date_val = st.date_input("Report date")
+            professional = st.text_input("Responsible clinician", placeholder="Dr./MD ____")
+            case_id = st.text_input("Case / Folio (optional)")
 
-        st.markdown("**Evolución / cambios desde el último informe**")
-        evolucion = st.text_area("Describa SOLO los cambios y su fecha", height=120,
-                                 placeholder="Ej.: 2025-09-12: inicio de fisioterapia; 2025-09-14: dolor disminuye a 3/10…")
+        st.markdown("**Clinical evolution / changes since last report**")
+        evolution = st.text_area(
+            "Enter ONLY the changes with their date",
+            height=120,
+            placeholder="Ex.: 2025-09-12: physiotherapy started; 2025-09-14: pain decreased to 3/10…",
+        )
 
-        submitted = st.form_submit_button("Generar checklist + borrador")
+        submitted = st.form_submit_button("Generate checklist + draft")
 
     if submitted:
-        st.subheader("Checklist sugerido")
-        st.markdown(  f"""
-            - Identificación del caso (folio: **{folio or 's/n'}**), profesional responsable y fecha **{fecha}**  
-            - Acto médico que origina el beneficio: **{acto or '—'}**  
-            - Diagnóstico/motivo principal: **{diag or '—'}**  
-            - Evolución **solo cambios** con fecha (formato *YYYY-MM-DD*):  
-              {('- ' + evolucion.replace('\\n', '\\n  - ')) if evolucion.strip() else '  - (pendiente)'}  
-            - Adjuntos exigidos por la aseguradora **{aseguradora or '(definir)'}**:  
-              - Orden médica / epicrisis  
-              - Informe clínico firmado (PDF)  
-              - Exámenes de respaldo (si aplica)  
-              - Certificados/plantillas propias de la aseguradora  
-            - Verificación de **plazos** y **formato** (cumplimiento HIPAA/GDPR)  
-            - Revisión humana final (paso 9) y registro de envío
-            """)
-          
+        # Precompute bullets to avoid backslashes inside f-strings
+        evo_bullets = bullets_from_multiline(evolution, indent="  - ")
 
-        st.subheader("Borrador de informe (esqueleto)")
-        informe = f"""
-        INFORME MÉDICO — Activación de beneficio
-        Aseguradora: {aseguradora or '—'}    |    Fecha: {fecha}
-        Profesional: {profesional or '—'}    |    Folio/Caso: {folio or 's/n'}
+        st.subheader("Suggested checklist")
+        st.markdown(
+            f"""
+- Case identification (folio: **{case_id or 'n/a'}**), responsible clinician and date **{date_val}**  
+- Medical Act triggering the benefit: **{trigger or '—'}**  
+- Primary diagnosis / reason: **{diagnosis or '—'}**  
+- Evolution **changes only** with date (format *YYYY-MM-DD*):  
+{evo_bullets}
+- Attachments required by **{insurer or '(define)'}**:  
+  - Medical order / discharge summary  
+  - Signed clinical report (PDF)  
+  - Supporting tests (if applicable)  
+  - Insurer-specific certificates/templates  
+- Verify **deadlines** and **format** (HIPAA/GDPR compliance)  
+- Final **human review** (step 9) and submission log
+            """
+        )
 
-        1) Acto médico (trigger)
-           - {acto or '—'}
+        st.subheader("Report draft (skeleton)")
+        draft = f"""
+MEDICAL REPORT — Benefit activation
+Insurance: {insurer or '—'}    |    Date: {date_val}
+Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
 
-        2) Diagnóstico / motivo principal
-           - {diag or '—'}
+1) Medical Act (trigger)
+   - {trigger or '—'}
 
-        3) Evolución (solo cambios fechados)
-        {evolucion if evolucion.strip() else '- (pendiente de completar por el profesional)'}
+2) Primary diagnosis / reason
+   - {diagnosis or '—'}
 
-        4) Fundamentos clínicos y respaldo
-           - Hallazgos relevantes, exámenes adjuntos, guías aplicadas.
+3) Evolution (changes only, each with date)
+{evolution if evolution.strip() else '- (to be completed by the clinician)'}
 
-        5) Recomendación / solicitud a la aseguradora
-           - Indicar cobertura/beneficio solicitado y duración estimada.
+4) Clinical rationale & supporting evidence
+   - Key findings, attached exams, applicable guidelines.
 
-        6) Cumplimiento y privacidad
-           - Documento preparado bajo buenas prácticas y normativa HIPAA/GDPR.
-        """.strip()
-        st.code(informe, language="markdown")
+5) Request to insurer
+   - Coverage/benefit requested and estimated duration.
 
-    st.caption("Este playground no reemplaza el juicio clínico ni legal; sirve como apoyo operativo del flujo.")
+6) Compliance & privacy
+   - Prepared under HIPAA/GDPR good practices.
+""".strip()
+        st.code(draft, language="markdown")
 
+    st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
