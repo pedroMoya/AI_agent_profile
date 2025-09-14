@@ -9,7 +9,7 @@ def bullets_from_multiline(text: str, indent="  - "):
 
 # --- Sidebar ---
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Problem", "Architecture", "Flow (1–9)", "Playground"])
+page = st.sidebar.radio("Go to", ["Problem Statement", "Solution & Key Roles", "Architecture", "Architecture (Icons)", "Flow (1–9)", "Impact", "Technology Stack", "Playground"],)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Actors")
@@ -113,7 +113,7 @@ elif page == "Architecture":
       patient -> agent [style=dashed, label="(9) Human-in-the-loop"];
     }
     """
-    st.graphviz_chart(dot, use_container_width=True)
+    st.graphviz_chart(dot, use_container_width="stretch")
 
     st.caption("(*) 'Autonomous' within guardrails and with human review.")
 
@@ -133,6 +133,179 @@ elif page == "Flow (1–9)":
         9. **Human-in-the-loop:** clinician verifies/edits before sending; patient can follow status.
         """
     )
+
+elif page == "Technology Stack":
+    st.title("Technology Stack (High-Level Architecture)")
+
+    dot = r"""
+    digraph G {
+      rankdir=LR; splines=spline; fontname="Helvetica";
+      node [shape=box, style="rounded", fontsize=11, fontname="Helvetica"];
+      edge [fontsize=10, fontname="Helvetica"];
+
+      subgraph cluster_comp {
+        label="Compliance Boundary: HIPAA / GDPR";
+        color=red;
+
+        profile     [label="Agent Profile"];
+        orchestrator[label="Agent\n(Orchestrator & Planner)"];
+        langchain   [label="LangChain\n(LLM + Tools orchestration)"];
+        langgraph   [label="LangGraph\n(Graph-based workflow)"];
+        memory      [label="Memory store"];
+        knowledge   [label="Knowledge base"];
+        tools       [label="Specialized Tools"];
+        system      [label="System message / policies"];
+
+        profile -> orchestrator [label="context"];
+        orchestrator -> langchain;
+        orchestrator -> langgraph;
+        langchain -> memory;
+        langchain -> knowledge;
+        langchain -> tools;
+        langgraph -> memory;
+        langgraph -> tools;
+        system -> orchestrator [label="policy"];
+      }
+
+      patient  [label="Patient Request / Trigger"];
+      clinician[label="Healthcare Professional"];
+      insurer  [label="Insurance Company"];
+
+      patient  -> profile;
+      clinician-> profile;
+      insurer  -> profile;
+
+      orchestrator -> insurer [label="reports / status"];
+      insurer -> system       [label="rules / templates"];
+
+      subgraph cluster_interop {
+        label="Interoperability & Standards";
+        color=gray;
+        mcp [label="MCP\n(Model Context Protocol)"];
+      }
+      mcp -- orchestrator [style=dashed, label="tool/runtime interop"];
+    }
+    """
+    st.graphviz_chart(dot, use_container_width="stretch")
+
+    st.subheader("Key Elements")
+    st.markdown("""
+- **LangChain** — LLM calls, tools, structured prompting (drafts, validations, ontology queries).  
+- **LangGraph** — graph/state-based control for multi-step flows (auditable steps 1–9).  
+- **Memory & Knowledge** — prior reports, insurer rules, compliance templates (RAG).  
+- **Tools** — validators, template generators, EHR/insurer connectors.  
+- **MCP (Model Context Protocol)** — interoperability across LLM runtimes/agents.  
+- **Compliance bound
+    y** — HIPAA/GDPR guardrails with human-in-the-loop.
+    """)
+
+elif page == "Architecture (Icons)":
+    import re, base64, mimetypes, shutil
+    from pathlib import Path
+    import streamlit as st
+    import streamlit.components.v1 as components
+
+    st.title("Architecture (Icons & Connections)")
+    st.caption("Icons are embedded into the final SVG after Graphviz renders.")
+
+    # --- Resolve icon dir ---
+    BASE = Path(__file__).resolve().parent
+    CANDIDATES = [
+        BASE / "assets" / "icons",
+        BASE / "sandbox" / "assets" / "icons",
+        BASE.parent / "assets" / "icons",
+        BASE.parent / "sandbox" / "assets" / "icons",
+    ]
+    ICON_DIR = next((p for p in CANDIDATES if p.exists()), CANDIDATES[0])
+
+    # Fallback if 'dot' is missing
+    has_dot = shutil.which("dot") is not None
+    if not has_dot:
+        st.error("Graphviz 'dot' not found. Install it: `sudo apt install graphviz` (WSL/Ubuntu), "
+                 "`brew install graphviz` (macOS), or `winget install Graphviz.Graphviz` (Windows).")
+        st.stop()
+
+    import graphviz as gv
+
+    def embed_images(svg_text: str, search_dir: Path) -> str:
+        def repl(m):
+            href = m.group(1)
+            p = (search_dir / href).resolve()
+            if not p.exists():
+                return m.group(0)
+            mime = mimetypes.guess_type(p.name)[0] or "image/png"
+            b64 = base64.b64encode(p.read_bytes()).decode("ascii")
+            return f'xlink:href="data:{mime};base64,{b64}"'
+        return re.sub(r'xlink:href="([^"]+)"', repl, svg_text)
+
+    imagepath_attr = ICON_DIR.as_posix()
+
+    dot = rf"""
+    digraph G {{
+      graph [rankdir=LR, splines=spline, fontname="Helvetica", imagepath="{imagepath_attr}"];
+      node [fontsize=11, fontname="Helvetica"];
+      edge [fontsize=10, fontname="Helvetica"];
+
+      subgraph cluster_comp {{
+        label="Compliance Boundary: HIPAA / GDPR";
+        color=red;
+
+        profile      [label="", image="agent_profile.png", shape=none, imagescale=true];
+        orchestrator [label="", image="orchestrator.png",  shape=none, imagescale=true];
+        llm          [label="", image="llm.png",           shape=none, imagescale=true];
+        system       [label="", image="system.png",        shape=none, imagescale=true];
+        langchain    [label="", image="langchain.png",     shape=none, imagescale=true];
+        langgraph    [label="", image="langgraph.png",     shape=none, imagescale=true];
+        memory       [label="", image="memory.png",        shape=none, imagescale=true];
+        knowledge    [label="", image="knowledge.png",     shape=none, imagescale=true];
+        tools        [label="", image="tools.png",         shape=none, imagescale=true];
+
+        profile_border [label="Agent Profile", shape=box, style="rounded,bold", color=blue, penwidth=2];
+        profile_border -> profile [style=invis];
+
+        profile -> orchestrator [label="context"];
+        orchestrator -> langchain;
+        orchestrator -> langgraph;
+        langchain -> memory;
+        langchain -> knowledge;
+        langchain -> tools;
+        langgraph -> memory;
+        langgraph -> tools;
+        orchestrator -> llm;
+        system -> orchestrator [label="policy"];
+      }}
+
+      patient   [label="", image="patient.png",   shape=none, imagescale=true];
+      clinician [label="", image="clinician.png", shape=none, imagescale=true];
+      insurer   [label="", image="insurer.png",   shape=none, imagescale=true];
+
+      patient  -> profile;
+      clinician-> profile;
+      insurer  -> profile;
+
+      orchestrator -> insurer [label="reports/status"];
+      insurer -> system       [label="rules/templates"];
+
+      subgraph cluster_interop {{
+        label="Interoperability & Standards";
+        color=gray;
+        mcp [label="", image="mcp.png", shape=none, imagescale=true];
+      }}
+      mcp -> orchestrator [style=dashed, dir=both, arrowhead=normal, arrowtail=normal];
+    }}
+    """
+
+    svg_bytes = gv.Source(dot, format="svg").pipe()
+    svg_text  = embed_images(svg_bytes.decode("utf-8"), ICON_DIR)
+
+    try:
+        # Newer Streamlit: auto-sizes, no height parameter
+        st.html(svg_text)
+    except (AttributeError, TypeError):
+        # Older Streamlit: use components.html to control height/scrolling
+        import streamlit.components.v1 as components
+        components.html(svg_text, height=640, scrolling=True)
+
 
 # --- Playground ---
 else:
