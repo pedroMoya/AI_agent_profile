@@ -22,8 +22,7 @@ st.sidebar.subheader("Governance")
 st.sidebar.checkbox("HIPAA / GDPR boundary", value=True)
 st.sidebar.checkbox("Human-in-the-loop (step 9)", value=True)
 
-# --- Problem view ---
-if page == "Problem":
+if page == "Problem Statement":
     st.title("Reports to activate health insurance benefits")
 
     st.markdown(
@@ -56,7 +55,7 @@ if page == "Problem":
 
     st.info(
         "Goal: use an **agent** (LLM + memory/knowledge/tools) to orchestrate a flow that ensures "
-        "complete, on‑time, policy‑compliant reports."
+        "complete, on-time, policy-compliant reports."
     )
 
 # --- Architecture view ---
@@ -480,3 +479,4 @@ Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
         st.code(draft, language="markdown")
 
     st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
+
