@@ -133,6 +133,155 @@ elif page == "Flow (1–9)":
         """
     )
 
+elif page == "Impact":
+    st.title("Impact & ROI (hypothesis)")
+    st.caption("Back-of-the-envelope, adjustable assumptions. Use real data when available.")
+
+    # --- Inputs form (keeps state; unique keys to avoid collisions) ---
+    with st.form("form_impact", border=True):
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            rpm = st.number_input("Reports per month", min_value=0, value=40, step=1, key="impact_rpm")
+            reject_pct = st.slider("Current rejection rate (%)", 0.0, 100.0, 15.0, 1.0, key="impact_reject_pct")
+            avg_delay_days = st.number_input("Average delay (days)", min_value=0.0, value=5.0, step=0.5, key="impact_delay_days")
+
+        with c2:
+            cost_hour = st.number_input("Clinician hourly cost (USD)", min_value=0.0, value=75.0, step=5.0, key="impact_cost_hour")
+            mins_now = st.number_input("Minutes per report (current)", min_value=0, value=45, step=5, key="impact_mins_now")
+            mins_target = st.number_input("Minutes per report (with agent)", min_value=0, value=25, step=5, key="impact_mins_target")
+
+        with c3:
+            reject_reduction = st.slider("Expected reduction of rejections (%)", 0.0, 100.0, 50.0, 5.0, key="impact_reject_reduction")
+            value_per_approval = st.number_input("Value per on-time approval (USD)", min_value=0.0, value=120.0, step=10.0, key="impact_value_approval")
+            deploy_cost = st.number_input("Monthly deployment cost (USD)", min_value=0.0, value=600.0, step=50.0, key="impact_deploy_cost")
+
+        risk_level = st.selectbox("Risk level (conservatism)", ["Low", "Medium", "High"], index=1, key="impact_risk")
+        submitted = st.form_submit_button("Compute impact")
+
+    # --- Compute derived metrics (runs on submit; values persist via session_state) ---
+    if submitted:
+        st.session_state["impact_last_compute"] = datetime.now().isoformat(timespec="seconds")
+
+    # Read values (current session state) and compute
+    risk_factor_map = {"Low": 1.0, "Medium": 0.7, "High": 0.5}
+    rf = risk_factor_map.get(st.session_state.get("impact_risk", "Medium"), 0.7)
+
+    mins_saved = max(0, st.session_state.get("impact_mins_now", mins_now) - st.session_state.get("impact_mins_target", mins_target))
+    hours_saved_month = st.session_state.get("impact_rpm", rpm) * (mins_saved / 60.0)
+    labor_savings = hours_saved_month * st.session_state.get("impact_cost_hour", cost_hour)
+
+    avoidable_rej = st.session_state.get("impact_rpm", rpm) * (st.session_state.get("impact_reject_pct", reject_pct) / 100.0) * (st.session_state.get("impact_reject_reduction", reject_reduction) / 100.0)
+    benefit_on_time = avoidable_rej * st.session_state.get("impact_value_approval", value_per_approval)
+    risk_adj_benefit = benefit_on_time * rf
+
+    gross_benefits = labor_savings + risk_adj_benefit
+    net_monthly = gross_benefits - st.session_state.get("impact_deploy_cost", deploy_cost)
+    roi = (gross_benefits - st.session_state.get("impact_deploy_cost", deploy_cost)) / st.session_state.get("impact_deploy_cost", deploy_cost) if st.session_state.get("impact_deploy_cost", deploy_cost) > 0 else float("inf")
+    payback_months = (st.session_state.get("impact_deploy_cost", deploy_cost) / net_monthly) if net_monthly > 0 else None
+
+    # --- Metrics header ---
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Net monthly impact", f"${net_monthly:,.0f}", help="Risk-adjusted benefits minus deployment cost")
+    m2.metric("Gross monthly benefits", f"${gross_benefits:,.0f}", help="Labor savings + risk-adjusted benefit")
+    m3.metric("ROI (monthly)", f"{roi*100:,.0f}%")
+    m4.metric("Payback (months)", f"{payback_months:.1f}" if payback_months else "—")
+
+    st.divider()
+
+    # --- Breakdown ---
+    st.subheader("Breakdown")
+    b1, b2, b3, b4 = st.columns(4)
+    b1.metric("Hours saved / month", f"{hours_saved_month:,.1f} h")
+    b2.metric("Labor savings / month", f"${labor_savings:,.0f}")
+    b3.metric("Avoided rejections / month", f"{avoidable_rej:,.1f}")
+    b4.metric("Risk‑adjusted benefit", f"${risk_adj_benefit:,.0f}")
+
+    with st.expander("Assumptions (editable inputs)", expanded=False):
+        st.markdown(
+            f"""
+- Reports/month: **{st.session_state.get('impact_rpm', rpm)}**  
+- Rejection rate (current): **{st.session_state.get('impact_reject_pct', reject_pct):.0f}%**  
+- Expected reduction of rejections: **{st.session_state.get('impact_reject_reduction', reject_reduction):.0f}%** (relative)  
+- Avg delay (days): **{st.session_state.get('impact_delay_days', avg_delay_days)}**  
+- Minutes/report (now → with agent): **{st.session_state.get('impact_mins_now', mins_now)} → {st.session_state.get('impact_mins_target', mins_target)}** (Δ = {mins_saved} min)  
+- Cost/hour (clinician): **${st.session_state.get('impact_cost_hour', cost_hour):,.0f}**  
+- Value per on-time approval: **${st.session_state.get('impact_value_approval', value_per_approval):,.0f}**  
+- Deployment cost (monthly): **${st.session_state.get('impact_deploy_cost', deploy_cost):,.0f}**  
+- Risk level → factor: **{st.session_state.get('impact_risk', 'Medium')} → {rf}**  
+- Last compute: **{st.session_state.get('impact_last_compute', '—')}**
+            """
+        )
+
+    st.divider()
+
+    # --- Export: Markdown + JSON ---
+    st.subheader("Export")
+    impact_md = f"""# Impact Summary
+
+- Net monthly impact: **${net_monthly:,.0f}**
+- Gross monthly benefits: **${gross_benefits:,.0f}**
+  - Labor savings: **${labor_savings:,.0f}** ({hours_saved_month:,.1f} h/month)
+  - Risk-adjusted benefit (on-time approvals): **${risk_adj_benefit:,.0f}** (factor {rf})
+- Avoided rejections/month: **{avoidable_rej:,.1f}**
+- ROI (monthly): **{roi*100:,.0f}%**
+- Payback: **{f"{payback_months:.1f} months" if payback_months else "—"}**
+
+## Assumptions
+- Reports/month: {st.session_state.get('impact_rpm', rpm)}
+- Rejection rate (current): {st.session_state.get('impact_reject_pct', reject_pct):.0f}%
+- Expected reduction of rejections: {st.session_state.get('impact_reject_reduction', reject_reduction):.0f}%
+- Avg delay (days): {st.session_state.get('impact_delay_days', avg_delay_days)}
+- Minutes/report (now → agent): {st.session_state.get('impact_mins_now', mins_now)} → {st.session_state.get('impact_mins_target', mins_target)} (Δ = {mins_saved} min)
+- Cost/hour (clinician): ${st.session_state.get('impact_cost_hour', cost_hour):,.0f}
+- Value per on-time approval: ${st.session_state.get('impact_value_approval', value_per_approval):,.0f}
+- Deployment cost (monthly): ${st.session_state.get('impact_deploy_cost', deploy_cost):,.0f}
+- Risk level → factor: {st.session_state.get('impact_risk', 'Medium')} → {rf}
+- Generated: {datetime.now().isoformat(timespec="seconds")}
+"""
+    st.download_button("Download Impact (.md)", impact_md, file_name="impact_summary.md")
+
+    impact_json = {
+        "inputs": {
+            "reports_per_month": st.session_state.get("impact_rpm", rpm),
+            "reject_rate_pct": st.session_state.get("impact_reject_pct", reject_pct),
+            "expected_reduction_reject_pct": st.session_state.get("impact_reject_reduction", reject_reduction),
+            "avg_delay_days": st.session_state.get("impact_delay_days", avg_delay_days),
+            "minutes_now": st.session_state.get("impact_mins_now", mins_now),
+            "minutes_target": st.session_state.get("impact_mins_target", mins_target),
+            "cost_per_hour_usd": st.session_state.get("impact_cost_hour", cost_hour),
+            "value_per_on_time_approval_usd": st.session_state.get("impact_value_approval", value_per_approval),
+            "deploy_cost_monthly_usd": st.session_state.get("impact_deploy_cost", deploy_cost),
+            "risk_level": st.session_state.get("impact_risk", "Medium"),
+            "risk_factor": rf,
+        },
+        "derived": {
+            "minutes_saved": mins_saved,
+            "hours_saved_month": hours_saved_month,
+            "labor_savings_usd": labor_savings,
+            "avoided_rejections_month": avoidable_rej,
+            "risk_adjusted_benefit_usd": risk_adj_benefit,
+            "gross_benefits_usd": gross_benefits,
+            "net_monthly_usd": net_monthly,
+            "roi_monthly": roi,
+            "payback_months": payback_months,
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+        },
+    }
+    import json
+    st.download_button("Download Config (.json)", json.dumps(impact_json, indent=2), file_name="impact_config.json")
+
+    # --- Assumptions & Limits ---
+    st.markdown(
+        f"""
+> **Assumptions & Limits**
+> - This is a simplified financial model for exploration, not a financial statement.
+> - All values are user-provided and should be replaced with measured data.
+> - Risk adjustment is a coarse factor (Low=1.0, Medium=0.7, High=0.5).
+> - Generated at: {datetime.now().isoformat(timespec="seconds")}
+"""
+    )
+
 elif page == "Technology Stack":
     st.title("Technology Stack (High-Level Architecture)")
 
@@ -479,4 +628,5 @@ Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
         st.code(draft, language="markdown")
 
     st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
+
 
