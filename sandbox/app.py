@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 
 st.set_page_config(page_title="Health Report Orchestrator", layout="wide")
 
@@ -628,5 +629,6 @@ Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
         st.code(draft, language="markdown")
 
     st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
+
 
 
