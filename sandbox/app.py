@@ -59,6 +59,150 @@ if page == "Problem Statement":
         "complete, on-time, policy-compliant reports."
     )
 
+# --- Solution & Key Roles ---
+elif page == "Solution & Key Roles":
+    st.title("Solution & Key Roles")
+    st.caption("A concise view of value, responsibilities, KPIs, and interfaces for each actor.")
+
+    # --- Solution overview and outcomes ---
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("Solution (high-level)")
+        st.markdown(
+            """
+- Orchestrate medical report creation with an **Agent** (LLM + memory/knowledge/tools).
+- Standardize content with **policy-aware templates** and **checklists**.
+- Reduce **rejections** and **delays**, improve **traceability** and **auditability**.
+- Keep **human-in-the-loop** for clinical and legal sense.
+            """
+        )
+    with c2:
+        st.subheader("Key outcomes")
+        st.markdown(
+            """
+- **Fewer rejections** and **on-time approvals**.
+- **Lower clinician time** per report (guided draft + validations).
+- **Transparency** for patient and insurer (status & history).
+- **Compliance-by-design** (HIPAA / GDPR, logging, minimization).
+            """
+        )
+
+    st.divider()
+
+    # --- Roles & responsibilities (expanders) ---
+    st.subheader("Roles & responsibilities")
+    with st.expander("Patient — legitimate requester", expanded=False):
+        st.markdown(
+            """
+**Responsibilities**
+- Provide consent, identity and required documents.
+- Review status and supply missing information.
+
+**Value**
+- On-time benefit activation, fewer re-requests, clear status visibility.
+            """
+        )
+    with st.expander("Healthcare professional — clinical author", expanded=False):
+        st.markdown(
+            """
+**Responsibilities**
+- Enter clinical facts; validate the final draft.
+- Sign and submit with the required attachments.
+
+**Value**
+- Guided drafting with less friction; fewer back-and-forths with insurer.
+            """
+        )
+    with st.expander("Agent (LLM + tools) — orchestrator/planner", expanded=True):
+        st.markdown(
+            """
+**Responsibilities**
+- Apply **templates** and **policy checks**; assemble attachments.
+- Run **consistency/coverage** validations; format and export.
+- Keep **audit trail** and surface traceable status.
+
+**Value**
+- Time savings for the clinician; higher first-pass yield.
+            """
+        )
+    with st.expander("Health insurance company — policy & adjudication", expanded=False):
+        st.markdown(
+            """
+**Responsibilities**
+- Publish **requirements/policies**; provide decision/status channel.
+- Return structured feedback on **rejection reasons**.
+
+**Value**
+- Standardized submissions; lower adjudication cost and cycle time.
+            """
+        )
+    with st.expander("Governance/Compliance — boundary & audit", expanded=False):
+        st.markdown(
+            """
+**Responsibilities**
+- Define the **compliance boundary** (HIPAA/GDPR), logging, and retention.
+- Approve templates, data minimization, and access control.
+
+**Value**
+- Risk reduction and verifiable conformance-by-design.
+            """
+        )
+
+    st.divider()
+
+    # --- Lightweight RACI matrix ---
+    st.subheader("RACI (lightweight)")
+    import pandas as pd
+    raci = pd.DataFrame(
+        [
+            ["Collect identity & consent",           "I", "C", "R", "A", "C"],
+            ["Draft clinical report",                "I", "A", "R", "C", "C"],
+            ["Assemble attachments",                 "I", "C", "R", "A", "C"],
+            ["Policy/coverage validation",           "I", "C", "R", "A", "A"],
+            ["Submit & track status",                "I", "A", "R", "C", "C"],
+            ["Feedback loop / template updates",     "I", "C", "R", "A", "A"],
+        ],
+        columns=["Task", "Patient", "Clinician", "Agent", "Insurer", "Compliance"],
+    )
+    st.dataframe(raci, use_container_width=True)
+
+    st.divider()
+
+    # --- KPIs and Interfaces ---
+    c3, c4 = st.columns(2)
+    with c3:
+        st.subheader("KPIs (suggested)")
+        st.markdown(
+            """
+- **First-pass approval rate** (%)
+- **Minutes per report** (clinician)
+- **Rejection rate** and **top reasons**
+- **Cycle time** (request → approval)
+- **Attachment completeness** (%)
+            """
+        )
+    with c4:
+        st.subheader("Interfaces")
+        st.markdown(
+            """
+- **Templates/Policies API** (insurer → agent)
+- **Status/Decisions API** (insurer → agent)
+- **Export** (PDF signed + JSON)
+- **Audit trail** (immutable logs)
+            """
+        )
+
+    # --- Assumptions & Limits ---
+    st.markdown(
+        """
+> **Assumptions & Limits**
+> - RACI is indicative and should be validated with stakeholders.
+> - APIs and templates are placeholders; connect to real endpoints as available.
+> - Keep human-in-the-loop for clinical/legal accountability.
+        """
+    )
+
+
 # --- Architecture view ---
 elif page == "Architecture":
     st.title("Proposed architecture (whiteboard → app)")
@@ -628,6 +772,7 @@ Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
         st.code(draft, language="markdown")
 
     st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
+
 
 
 
