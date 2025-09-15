@@ -497,8 +497,7 @@ elif page == "Architecture (Icons)":
     import streamlit as st
     import streamlit.components.v1 as components
 
-    st.title("Architecture (Icons & Connections)")
-    st.caption("Pure HTML + SVG, responsive via viewBox and aspect-ratio (no Graphviz).")
+    st.title("Architecture (Icons)")
 
     # --- 1) Locate icons directory ---
     BASE = Path(__file__).resolve().parent
@@ -772,6 +771,7 @@ Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
         st.code(draft, language="markdown")
 
     st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
+
 
 
 
