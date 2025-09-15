@@ -344,8 +344,7 @@ elif page == "Technology Stack":
 - **Memory & Knowledge** — prior reports, insurer rules, compliance templates (RAG).  
 - **Tools** — validators, template generators, EHR/insurer connectors.  
 - **MCP (Model Context Protocol)** — interoperability across LLM runtimes/agents.  
-- **Compliance bound
-    y** — HIPAA/GDPR guardrails with human-in-the-loop.
+- **Compliance boundary** — HIPAA/GDPR guardrails with human-in-the-loop.
     """)
 
 elif page == "Architecture (Icons)":
@@ -629,6 +628,7 @@ Clinician: {professional or '—'}    |    Case/Folio: {case_id or 'n/a'}
         st.code(draft, language="markdown")
 
     st.caption("This playground does not replace clinical or legal judgment; it supports the operational flow.")
+
 
 
 
